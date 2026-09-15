@@ -1,6 +1,7 @@
 import { Request,Response } from "express";
 import { getApplicationsService } from "../services/application.service";
-export  const  getApplications =(req:Request,res:Response) =>{
-    const result = getApplicationsService()
+
+export async function  getApplications (req:Request,res:Response) {
+    const result = await getApplicationsService()
          res.json(result)
 }
