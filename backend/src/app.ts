@@ -15,8 +15,19 @@ app.get("/",(req,res)=>{
 app.use("/applications",applicationRouter)
 app.use("/auth",authRouter)
 
+app.use((req:Request,res:Response)=>{
+    res.status(404).json({
+        message:"Route not found"
+    })
+})
 
 app.use((error:unknown, req:Request, res:Response, next:NextFunction)=>{
+
+    if(typeof error === "object" && error!== null && "type" in error && error.type === "entity.parse.failed"){
+        return res.status(400).json({
+            message: "Invalid JSON"
+        })
+    }
      if( typeof error === "object" && error !== null && "code" in error && error.code === "23505" && 
         "constraint" in error && error.constraint === "users_email_key") {
               return res.status(409).json({
