@@ -1,7 +1,9 @@
 import { Router } from "express";
 import { getApplications } from "../controllers/applications.controller";
-const router = Router()
+import { getApplicationByID } from "../controllers/applications.controller";
+const applicationRouter = Router()
 
-router.get("/",getApplications)
+applicationRouter.get("/",getApplications)
+applicationRouter.get("/:id",getApplicationByID)
 
-export default router
+export default applicationRouter
