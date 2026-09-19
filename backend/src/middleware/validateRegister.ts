@@ -1,5 +1,6 @@
 import { Request,Response,NextFunction } from "express";
 import { registerSchema } from "../validation/auth.schema";
+import {z} from "zod";
 
 export function validateRegister(req:Request,res:Response,next:NextFunction){
 
@@ -7,7 +8,7 @@ export function validateRegister(req:Request,res:Response,next:NextFunction){
     if(!result.success){
         return res.status(400).json({
             message:"Validation failed",
-            errors: result.error.flatten().fieldErrors
+            errors: z.flattenError(result.error).fieldErrors
         })
     }
 
