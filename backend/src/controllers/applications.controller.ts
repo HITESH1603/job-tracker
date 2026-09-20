@@ -1,5 +1,5 @@
 import { Request,Response } from "express";
-import { getApplicationsService, getApplicationByIDService, createApplicationService, updateApplicationService} from "../services/application.service";
+import { getApplicationsService, getApplicationByIDService, createApplicationService, updateApplicationService, deleteApplicationService} from "../services/application.service";
 
 
 export async function  getApplications (req:Request,res:Response) {
@@ -94,3 +94,37 @@ export async function updateApplication(req:Request, res:Response){
 
       res.json(application);
 }
+
+
+export async function deleteApplication(req:Request, res:Response){
+
+      const {id} = req.params;
+
+      const applicationId = Number(id);
+
+      if(!Number.isInteger(applicationId) || applicationId<=0){
+
+        return res.status(400).json({
+          message: "Invalid ID"
+        });
+      }
+
+      if(req.userId === undefined){
+
+        return res.status(401).json({
+            message: "Unauthorized"
+        });
+      }
+
+      const application = await deleteApplicationService(applicationId, req.userId);
+
+      if(!application){
+
+        return res.status(404).json({
+            message: "Application not found"
+        });
+      }
+
+        return res.status(204).send();
+      }
+

@@ -76,3 +76,13 @@ export async function getApplicationsService (userId:number) {
             
              return result.rows[0];
  }
+
+
+
+ export async function deleteApplicationService(applicationId:number, userId:number){
+              const result = await pool.query(`DELETE FROM applications WHERE id = $1 AND user_id = $2 RETURNING id `,
+                [applicationId,userId]
+              ) ;
+              
+              return result.rows[0];
+ }

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getApplications, getApplicationByID, createApplication, updateApplication } from "../controllers/applications.controller";
+import { getApplications, getApplicationByID, createApplication, updateApplication, deleteApplication } from "../controllers/applications.controller";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { validateApplication } from "../middleware/validateApplication";
 import { validateApplicationUpdate } from "../middleware/validateApplicationUpdate";
@@ -10,5 +10,6 @@ applicationRouter.get("/",authMiddleware, getApplications);
 applicationRouter.get("/:id", authMiddleware, getApplicationByID);
 applicationRouter.post("/",authMiddleware, validateApplication, createApplication);
 applicationRouter.patch("/:id", authMiddleware, validateApplicationUpdate, updateApplication);
+applicationRouter.delete("/:id", authMiddleware, deleteApplication);
 
 export default applicationRouter;
