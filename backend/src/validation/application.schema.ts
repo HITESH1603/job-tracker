@@ -16,3 +16,5 @@ export const applicationSchema = z.object({
     date_applied: z.iso.date().optional(),
     notes: z.string().optional()
 });
+
+export const updateApplicationSchema = applicationSchema.partial();

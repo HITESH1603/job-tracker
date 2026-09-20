@@ -45,3 +45,34 @@ export async function getApplicationsService (userId:number) {
  }
 
 
+
+
+ export async function updateApplicationService (applicationId: number, userId: number, updates: Record<string,unknown>) {
+
+            const allowedFields = ["company", "role", "status", "location", "job_url", "date_applied", "notes" ];
+
+            const fields: string[] = [];
+            const values: unknown[] = [];
+
+            for(const field of allowedFields){
+                if(field in updates){
+                    fields.push(`${field} = $${values.length + 1}`);
+                    values.push(updates[field]);
+                }
+            }
+
+            fields.push("updated_at = NOW()");
+
+            values.push(applicationId);
+
+            values.push(userId);
+
+            const result = await pool.query(`UPDATE applications SET ${fields.join(" ,")} 
+                                            WHERE id = $${values.length-1} AND user_id = $${values.length}
+                                            RETURNING id, user_id, company, role, status, location,
+                                             job_url, date_applied, notes, created_at, updated_at`,
+                                             values);
+
+            
+             return result.rows[0];
+ }
