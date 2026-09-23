@@ -9,7 +9,11 @@ export async function  getApplications (req:Request,res:Response) {
             message:"Unauthorized"
         });
     }
-    const result = await getApplicationsService(req.userId);
+
+
+   const status = req.validatedQuery.status;
+
+   const result = await getApplicationsService(req.userId,status);
 
        
          res.json(result);

@@ -1,12 +1,27 @@
 import pool from "../db/connection";
 
 
-export async function getApplicationsService (userId:number) {
+export async function getApplicationsService (userId:number, status?:string) {
+   if (status){
+    const result = await pool.query(
+         `SELECT id, user_id, company, role, status, location,
+          job_url, date_applied, notes, created_at, updated_at
+          FROM applications
+          WHERE user_id =$1 and status= $2`,
+          [userId, status]);
 
-    const result =  await pool.query("SELECT * FROM applications WHERE user_id = $1",
+      return result.rows;
+   }
+
+   const result = await pool.query(
+        `SELECT id, user_id, company, role, status, location,
+                job_url, date_applied, notes, created_at, updated_at
+         FROM applications
+         WHERE user_id = $1`,
         [userId]
-    ) 
-    return result.rows
+    );
+
+    return result.rows;
  }
 
 

@@ -3,10 +3,11 @@ import { getApplications, getApplicationByID, createApplication, updateApplicati
 import { authMiddleware } from "../middleware/auth.middleware";
 import { validateApplication } from "../middleware/validateApplication";
 import { validateApplicationUpdate } from "../middleware/validateApplicationUpdate";
+import { validateApplicationQuery } from "../middleware/validateApplicationQuery";
 
 const applicationRouter = Router();
 
-applicationRouter.get("/",authMiddleware, getApplications);
+applicationRouter.get("/",authMiddleware, validateApplicationQuery, getApplications);
 applicationRouter.get("/:id", authMiddleware, getApplicationByID);
 applicationRouter.post("/",authMiddleware, validateApplication, createApplication);
 applicationRouter.patch("/:id", authMiddleware, validateApplicationUpdate, updateApplication);
