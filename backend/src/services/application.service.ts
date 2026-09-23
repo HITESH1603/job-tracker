@@ -1,17 +1,42 @@
 import pool from "../db/connection";
 
 
-export async function getApplicationsService (userId:number, status?:string) {
+export async function getApplicationsService (userId:number, status?:string, search?:string) {
+
+    if(status && search){
+          const result = await pool.query(
+         `SELECT id, user_id, company, role, status, location,
+          job_url, date_applied, notes, created_at, updated_at
+          FROM applications
+          WHERE user_id =$1 AND status= $2 AND (
+             company ILIKE $3
+             OR role ILIKE $3)`,
+          [userId, status, `%${search}%`]);
+
+      return result.rows;
+    }
    if (status){
     const result = await pool.query(
          `SELECT id, user_id, company, role, status, location,
           job_url, date_applied, notes, created_at, updated_at
           FROM applications
-          WHERE user_id =$1 and status= $2`,
+          WHERE user_id =$1 AND status= $2`,
           [userId, status]);
 
       return result.rows;
-   }
+   } 
+    if(search){
+        const result = await pool.query(
+         `SELECT id, user_id, company, role, status, location,
+          job_url, date_applied, notes, created_at, updated_at
+          FROM applications
+          WHERE user_id =$1 AND (
+             company ILIKE $2
+             OR role ILIKE $2)`,
+          [userId, `%${search}%`]);
+
+      return result.rows;
+    }
 
    const result = await pool.query(
         `SELECT id, user_id, company, role, status, location,
