@@ -1,58 +1,49 @@
 import pool from "../db/connection";
 
 
-export async function getApplicationsService (userId:number, status?:string, search?:string) {
+export async function getApplicationsService (userId:number, status?:string, search?:string, 
+                                               sortBy: string = "created_at", order:string = "desc") {
 
-    if(status && search){
-          const result = await pool.query(
-         `SELECT id, user_id, company, role, status, location,
-          job_url, date_applied, notes, created_at, updated_at
-          FROM applications
-          WHERE user_id =$1 AND status= $2 AND (
-             company ILIKE $3
-             OR role ILIKE $3)`,
-          [userId, status, `%${search}%`]);
+   
+     const sortColumns : Record<string,string> = {
+        company: "company",
+        role: "role",
+        created_at: "created_at",
+        updated_at: "updated_at",
+        status: "status",
+        date_applied: "date_applied"
+     };
 
-      return result.rows;
+     const sortColumn = sortColumns[sortBy] ?? "created_at";
+     const sortOrder = order === "asc" ? "ASC" : "DESC";
+
+     const conditions: string[] = ["user_id= $1"];
+     const values: unknown[] = [userId];
+
+    if(status) {
+        conditions.push(`status = $${values.length+1}`);
+        values.push(status);
     }
-   if (status){
-    const result = await pool.query(
-         `SELECT id, user_id, company, role, status, location,
-          job_url, date_applied, notes, created_at, updated_at
-          FROM applications
-          WHERE user_id =$1 AND status= $2`,
-          [userId, status]);
 
-      return result.rows;
-   } 
     if(search){
-        const result = await pool.query(
-         `SELECT id, user_id, company, role, status, location,
-          job_url, date_applied, notes, created_at, updated_at
-          FROM applications
-          WHERE user_id =$1 AND (
-             company ILIKE $2
-             OR role ILIKE $2)`,
-          [userId, `%${search}%`]);
-
-      return result.rows;
+        conditions.push(`(
+            company ILIKE $${values.length+1}
+         OR role ILIKE $${values.length+1})`);
+        values.push(`%${search}%`);
     }
 
-   const result = await pool.query(
-        `SELECT id, user_id, company, role, status, location,
-                job_url, date_applied, notes, created_at, updated_at
-         FROM applications
-         WHERE user_id = $1`,
-        [userId]
-    );
+    const result = await pool.query(
+        ` SELECT id, user_id, company, role, status, location,
+          job_url, date_applied, notes, created_at, updated_at
+          FROM applications
+          WHERE ${conditions.join(" AND ")}
+          ORDER BY ${sortColumn} ${sortOrder}`,
+         values);
 
-    return result.rows;
+         return result.rows;
  }
 
-
- 
- 
- export async function getApplicationByIDService (id:number , userId:number) {
+export async function getApplicationByIDService (id:number , userId:number) {
 
     const result = await pool.query(` Select id,user_id, company, role, status, location,
         job_url,date_applied,notes ,created_at, updated_at
