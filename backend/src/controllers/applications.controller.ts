@@ -11,9 +11,9 @@ export async function  getApplications (req:Request,res:Response) {
     }
 
 
-   const {status, search, sortBy, order} = req.validatedQuery;
+   const {status, search, sortBy, order, page, limit} = req.validatedQuery;
 
-   const result = await getApplicationsService(req.userId,status, search, sortBy, order);
+   const result = await getApplicationsService(req.userId,status, search, sortBy, order, page, limit);
 
        
          res.json(result);

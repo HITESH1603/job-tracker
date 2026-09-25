@@ -2,9 +2,11 @@ import pool from "../db/connection";
 
 
 export async function getApplicationsService (userId:number, status?:string, search?:string, 
-                                               sortBy: string = "created_at", order:string = "desc") {
+                                               sortBy: string = "created_at", order:string = "desc",
+                                               page:number = 1, limit:number = 10) {
 
-   
+     const offset = (page-1)* limit;
+
      const sortColumns : Record<string,string> = {
         company: "company",
         role: "role",
@@ -31,13 +33,22 @@ export async function getApplicationsService (userId:number, status?:string, sea
          OR role ILIKE $${values.length+1})`);
         values.push(`%${search}%`);
     }
+       
+
+    const limitPlaceholder = values.length +1 ;
+    values.push(limit);
+
+    const offsetPlaceholder = values.length + 1;
+       values.push(offset); 
 
     const result = await pool.query(
         ` SELECT id, user_id, company, role, status, location,
           job_url, date_applied, notes, created_at, updated_at
           FROM applications
           WHERE ${conditions.join(" AND ")}
-          ORDER BY ${sortColumn} ${sortOrder}`,
+          ORDER BY ${sortColumn} ${sortOrder}
+          LIMIT $${limitPlaceholder}
+          OFFSET $${offsetPlaceholder} `,
          values);
 
          return result.rows;
