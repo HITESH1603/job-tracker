@@ -1,5 +1,5 @@
 import { Request,Response } from "express";
-import { getApplicationsService, getApplicationByIDService, createApplicationService, updateApplicationService, deleteApplicationService} from "../services/application.service";
+import { getApplicationsService, getApplicationByIDService, createApplicationService, updateApplicationService, deleteApplicationService, getApplicationStatsService} from "../services/application.service";
 
 
 export async function  getApplications (req:Request,res:Response) {
@@ -132,3 +132,13 @@ export async function deleteApplication(req:Request, res:Response){
         return res.status(204).send();
       }
 
+
+      export async function getApplicationStats (req:Request, res:Response){
+        if (req.userId === undefined){
+            return res.status(401).json({
+                message: "Unauthorized"
+            });
+        }
+         const result = await getApplicationStatsService(req.userId);
+         return res.json(result);
+      }

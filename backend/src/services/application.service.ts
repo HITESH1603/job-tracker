@@ -128,3 +128,41 @@ export async function getApplicationByIDService (id:number , userId:number) {
               
               return result.rows[0];
  }
+
+
+
+
+
+ export async function getApplicationStatsService(userId: number){
+             const totalResult = await pool.query(`SELECT COUNT (*) AS total 
+                                              FROM applications
+                                              WHERE user_id = $1 `,
+                                             [userId]);
+
+             const statusResult = await pool.query(`SELECT status , COUNT(*) AS count
+                                                     FROM applications
+                                                     WHERE user_id = $1
+                                                     GROUP BY status`,
+                                                    [userId])
+                                                    
+                                                    
+
+         const byStatus = {
+               saved: 0,
+               applied: 0,
+               interview: 0,
+               offer: 0,
+               rejected: 0,
+               withdrawn: 0
+         };
+
+         
+         for(const row of statusResult.rows){
+            byStatus[row.status as keyof typeof byStatus] = Number(row.count);
+         }
+
+         return {
+             total: Number(totalResult.rows[0].total),
+             byStatus
+         };
+ }
