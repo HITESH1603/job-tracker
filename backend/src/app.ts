@@ -3,8 +3,11 @@ import applicationRouter from "./routes/applications.routes";
 import authRouter from "./routes/auth.routes";
 import { Request , Response , NextFunction } from "express";
 import cors from "cors";
+import helmet from "helmet";
 
 const app = express();
+
+app.use(helmet());
 
 app.use(cors({
   origin: "http://localhost:5173"  
