@@ -40,7 +40,9 @@ if((parts[0] !=='Bearer'|| !parts[1])){
 const token = parts[1]
 
 try {
-   const decoded = jwt.verify(token,jwtSecret)
+   const decoded = jwt.verify(token,jwtSecret , {
+    algorithms: ["HS256"]
+});
 
    if( typeof decoded === "string" || typeof decoded.userId !== "number"){
     return res.status(401).json ({
