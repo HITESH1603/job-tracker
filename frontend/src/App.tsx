@@ -1,16 +1,14 @@
 import Navbar from './components/Navbar'
-
+import Dashboard from './components/Dashboard'
 
 function App() {
   return (
-    <div>
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <h2 className="text-3xl font-bold text-blue-600">
-        Dashboard
-      </h2>
-
-      <p>Welcome to your job search dashboard.</p>
+      <div className="mx-auto max-w-7xl px-6 py-8">
+        <Dashboard />
+      </div>
     </div>
   )
 }
