@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 const stats = [
   { label: "Total Applications", value: 42 },
   { label: "Interviews", value: 8 },
@@ -95,12 +96,12 @@ function Dashboard() {
           </table>
         </div>
         <div className="border-t border-gray-200 px-6 py-4 text-right">
-          <a
-            href="/applications"
+          <Link
+            to="/applications"
             className="text-sm font-medium text-blue-600 hover:text-blue-700"
           >
             View all applications →
-          </a>
+          </Link>
         </div>
       </section>
     </main>

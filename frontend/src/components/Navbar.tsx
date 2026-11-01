@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 
 function Navbar() {
   return (
@@ -7,13 +8,13 @@ function Navbar() {
       </h1>
 
       <div className="flex gap-6">
-        <a href="/" className="text-gray-700 hover:text-blue-600">
+        <Link to="/" className="text-gray-700 hover:text-blue-600">
           Dashboard
-        </a>
+        </Link>
 
-        <a href="/applications" className="text-gray-700 hover:text-blue-600">
+        <Link to="/applications" className="text-gray-700 hover:text-blue-600">
           Applications
-        </a>
+        </Link>
 
         <a href="/profile" className="text-gray-700 hover:text-blue-600">
           Profile
