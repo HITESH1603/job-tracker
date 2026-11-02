@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom'
+import { Link } from "react-router-dom";
+import type { Application } from "../types/application";
+
 const stats = [
   { label: "Total Applications", value: 42 },
   { label: "Interviews", value: 8 },
@@ -6,10 +8,46 @@ const stats = [
   { label: "Rejected", value: 12 },
 ];
 
-const recentApplications = [
-  { company: "Google", role: "Software Engineer", status: "Interview" },
-  { company: "Amazon", role: "SDE I", status: "Applied" },
-  { company: "Microsoft", role: "Developer", status: "Rejected" },
+const recentApplications: Application[] = [
+  {
+    id: 1,
+    user_id: 1,
+    company: "Google",
+    role: "Software Engineer",
+    status: "interview",
+    location: "Bengaluru",
+    job_url: null,
+    date_applied: "2026-10-20",
+    notes: null,
+    created_at: "2026-10-20T10:00:00.000Z",
+    updated_at: "2026-10-20T10:00:00.000Z",
+  },
+  {
+    id: 2,
+    user_id: 1,
+    company: "Amazon",
+    role: "SDE I",
+    status: "applied",
+    location: "Bengaluru",
+    job_url: null,
+    date_applied: "2026-10-22",
+    notes: null,
+    created_at: "2026-10-22T10:00:00.000Z",
+    updated_at: "2026-10-22T10:00:00.000Z",
+  },
+  {
+    id: 3,
+    user_id: 1,
+    company: "Microsoft",
+    role: "Developer",
+    status: "rejected",
+    location: "Bengaluru",
+    job_url: null,
+    date_applied: "2026-10-24",
+    notes: null,
+    created_at: "2026-10-24T10:00:00.000Z",
+    updated_at: "2026-10-24T10:00:00.000Z",
+  },
 ];
 
 function Dashboard() {
@@ -70,7 +108,7 @@ function Dashboard() {
 
             <tbody>
               {recentApplications.map((application) => (
-                <tr key={application.company} className="hover:bg-gray-50">
+                <tr key={application.id} className="hover:bg-gray-50">
                   <td className="border-b border-gray-200 px-6 py-4 text-sm text-gray-700">
                     {application.company}
                   </td>
@@ -80,9 +118,9 @@ function Dashboard() {
                   <td className="border-b border-gray-200 px-6 py-4 text-sm text-gray-700">
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-medium ${
-                        application.status === "Interview"
+                        application.status === "interview"
                           ? "bg-green-100 text-green-700"
-                          : application.status === "Applied"
+                          : application.status === "applied"
                             ? "bg-blue-100 text-blue-700"
                             : "bg-red-100 text-red-700"
                       }`}
