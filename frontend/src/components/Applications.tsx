@@ -24,7 +24,7 @@ function Applications() {
 
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  const [applications, setApplications] = useState<Application[]>([
+  const [applications] = useState<Application[]>([
     {
       id: 1,
       user_id: 1,
