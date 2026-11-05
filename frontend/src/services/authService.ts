@@ -27,6 +27,12 @@ type LoginResponse = {
   token: string;
 };
 
+type User = {
+  id: number;
+  name: string;
+  email: string;
+};
+
 export async function loginUser(input: LoginInput): Promise<LoginResponse> {
   const data = await apiRequest("/auth/login", {
     method: "POST",
@@ -36,4 +42,10 @@ export async function loginUser(input: LoginInput): Promise<LoginResponse> {
   sessionStorage.setItem("token", data.token);
 
   return data;
+}
+
+export async function getCurrentUser(): Promise<User> {
+  const data = await apiRequest("/auth/me");
+
+  return data.user;
 }

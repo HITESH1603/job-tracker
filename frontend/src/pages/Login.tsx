@@ -2,20 +2,21 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import type { SyntheticEvent } from "react";
 
 function Login() {
-  // Form values
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // UI states
+  
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setError("");
