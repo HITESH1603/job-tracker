@@ -1,15 +1,12 @@
-
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import type { SyntheticEvent } from "react";
 
 function Login() {
-  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -41,9 +38,7 @@ function Login() {
     <div className="flex min-h-[70vh] items-center justify-center">
       <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Welcome back
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
 
           <p className="mt-2 text-sm text-gray-500">
             Sign in to continue to your Job Tracker
@@ -108,6 +103,15 @@ function Login() {
             {isLoading ? "Signing in..." : "Sign in"}
           </button>
         </form>
+        <p className="mt-6 text-center text-sm text-gray-500">
+          Don't have an account?{" "}
+          <Link
+            to="/register"
+            className="font-medium text-blue-600 hover:text-blue-700"
+          >
+            Create one
+          </Link>
+        </p>
       </div>
     </div>
   );
