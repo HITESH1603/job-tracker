@@ -1,5 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { SyntheticEvent } from "react";
+import {
+  getApplications,
+  createApplication,
+} from "../services/applicationService";
 import type {
   Application,
   CreateApplicationInput,
@@ -17,75 +21,53 @@ function isApplicationStatus(value: string): value is ApplicationStatus {
   ].includes(value);
 }
 
-
-
 function Applications() {
   const [searchTerm, setSearchTerm] = useState("");
-
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  const [applications] = useState<Application[]>([
-    {
-      id: 1,
-      user_id: 1,
-      company: "Google",
-      role: "Software Engineer",
-      status: "interview",
-      location: "Bengaluru",
-      job_url: null,
-      date_applied: "2026-10-20",
-      notes: null,
-      created_at: "2026-10-20T10:00:00.000Z",
-      updated_at: "2026-10-20T10:00:00.000Z",
-    },
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-    {
-      id: 2,
-      user_id: 1,
-      company: "Amazon",
-      role: "SDE 1",
-      status: "applied",
-      location: "Bengaluru",
-      job_url: null,
-      date_applied: "2026-10-22",
-      notes: null,
-      created_at: "2026-10-22T10:00:00.000Z",
-      updated_at: "2026-10-22T10:00:00.000Z",
-    },
-    {
-      id: 3,
-      user_id: 1,
-      company: "Microsoft",
-      role: "Backend Developer",
-      status: "rejected",
-      location: "Bengaluru",
-      job_url: null,
-      date_applied: "2026-10-24",
-      notes: null,
-      created_at: "2026-10-24T10:00:00.000Z",
-      updated_at: "2026-10-24T10:00:00.000Z",
-    },
-  ]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadApplications() {
+      try {
+        const data = await getApplications();
+        setApplications(data);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to load applications",
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadApplications();
+  }, []);
 
   const filteredApplications = applications.filter((application) => {
-    const companyMatches = application.company
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+    const search = searchTerm.toLowerCase();
 
-    const roleMatches = application.role
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+    const companyMatches = application.company.toLowerCase().includes(search);
+    const roleMatches = application.role.toLowerCase().includes(search);
 
     return companyMatches || roleMatches;
   });
 
-  function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     const company = formData.get("company");
     const role = formData.get("role");
     const status = formData.get("status");
+
     const location = formData.get("location");
     const jobUrl = formData.get("job_url");
     const dateApplied = formData.get("date_applied");
@@ -103,105 +85,103 @@ function Applications() {
       return;
     }
 
-    const optionalLocation =
-      typeof location === "string" && location !== "" ? location : undefined;
-
-    const optionalJobUrl =
-      typeof jobUrl === "string" && jobUrl !== "" ? jobUrl : undefined;
-
-    const optionalDateApplied =
-      typeof dateApplied === "string" && dateApplied !== ""
-        ? dateApplied
-        : undefined;
-
-    const optionalNotes =
-      typeof notes === "string" && notes !== "" ? notes : undefined;
-
     const applicationData: CreateApplicationInput = {
       company,
       role,
       status,
-      location: optionalLocation,
-      job_url: optionalJobUrl,
-      date_applied: optionalDateApplied,
-      notes: optionalNotes,
+      ...(typeof location === "string" && location !== "" && { location }),
+      ...(typeof jobUrl === "string" && jobUrl !== "" && { job_url: jobUrl }),
+      ...(typeof dateApplied === "string" &&
+        dateApplied !== "" && { date_applied: dateApplied }),
+      ...(typeof notes === "string" && notes !== "" && { notes }),
     };
 
-    console.log(applicationData);
+    try {
+      setIsSubmitting(true);
+      setSubmitError(null);
+
+      const newApplication = await createApplication(applicationData);
+
+      setApplications((currentApplications) => [
+        newApplication,
+        ...currentApplications,
+      ]);
+
+      form.reset();
+      setIsFormOpen(false);
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : "Failed to create application",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
+
+  if (isLoading) {
+    return <p className="p-6">Loading applications...</p>;
+  }
+
+  if (error) {
+    return <p className="p-6 text-red-600">{error}</p>;
+  }
+
   return (
-    <main className="space-y-8">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">My Applications</h2>
-
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900">My Applications</h1>
+          <p className="mt-1 text-gray-500">
             Manage and track all your job applications.
           </p>
         </div>
 
         <button
-          onClick={() => setIsFormOpen(true)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          onClick={() => {
+            setIsFormOpen(!isFormOpen);
+            setSubmitError(null);
+          }}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
         >
-          + Add Application
+          {isFormOpen ? "Close Form" : "+ Add Application"}
         </button>
       </div>
 
       {isFormOpen && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <h3 className="text-lg font-semibold">Add New Application</h3>
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4 rounded-lg border bg-white p-6 shadow-sm"
+        >
+          <h2 className="text-lg font-semibold">Add New Application</h2>
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label
-                htmlFor="company"
-                className="mb-1 block text-sm font-medium text-gray-700"
-              >
-                Company *
-              </label>
-
+              <label className="mb-1 block text-sm font-medium">Company</label>
               <input
-                id="company"
                 name="company"
-                type="text"
-                placeholder="e.g. Google"
                 required
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="w-full rounded-lg border p-2"
+                placeholder="Google"
               />
             </div>
-            <div>
-              <label
-                htmlFor="role"
-                className="mb-1 block text-sm font-medium text-gray-700"
-              >
-                Role *
-              </label>
 
+            <div>
+              <label className="mb-1 block text-sm font-medium">Role</label>
               <input
-                id="role"
                 name="role"
-                type="text"
-                placeholder="e.g. Software Engineer"
                 required
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="w-full rounded-lg border p-2"
+                placeholder="Software Engineer"
               />
             </div>
 
             <div>
-              <label
-                htmlFor="status"
-                className="mb-1 block text-sm font-medium text-gray-700"
-              >
-                Status *
-              </label>
-
+              <label className="mb-1 block text-sm font-medium">Status</label>
               <select
-                id="status"
                 name="status"
                 required
+                className="w-full rounded-lg border p-2"
                 defaultValue="saved"
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               >
                 <option value="saved">Saved</option>
                 <option value="applied">Applied</option>
@@ -213,133 +193,124 @@ function Applications() {
             </div>
 
             <div>
-              <label
-                htmlFor="location"
-                className="mb-1 block text-sm font-medium text-gray-700"
-              >
-                Location
-              </label>
-
+              <label className="mb-1 block text-sm font-medium">Location</label>
               <input
-                id="location"
                 name="location"
-                type="text"
-                placeholder="e.g. Bengaluru"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="w-full rounded-lg border p-2"
+                placeholder="Kolkata"
               />
             </div>
 
             <div>
-              <label
-                htmlFor="job_url"
-                className="mb-1 block text-sm font-medium text-gray-700"
-              >
-                Job URL
-              </label>
-
+              <label className="mb-1 block text-sm font-medium">Job URL</label>
               <input
-                id="job_url"
                 name="job_url"
                 type="url"
+                className="w-full rounded-lg border p-2"
                 placeholder="https://example.com/job"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
             </div>
 
             <div>
-              <label
-                htmlFor="date_applied"
-                className="mb-1 block text-sm font-medium text-gray-700"
-              >
+              <label className="mb-1 block text-sm font-medium">
                 Date Applied
               </label>
-
               <input
-                id="date_applied"
                 name="date_applied"
                 type="date"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="w-full rounded-lg border p-2"
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="notes"
-                className="mb-1 block text-sm font-medium text-gray-700"
-              >
-                Notes
-              </label>
-
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-sm font-medium">Notes</label>
               <textarea
-                id="notes"
                 name="notes"
-                rows={4}
-                placeholder="Add any notes about this application..."
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                rows={3}
+                className="w-full rounded-lg border p-2"
+                placeholder="Add any notes..."
               />
             </div>
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setIsFormOpen(false)}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
+          </div>
 
-              <button
-                type="submit"
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                Save Application
-              </button>
-            </div>
-          </form>
-        </div>
+          {submitError && <p className="text-sm text-red-600">{submitError}</p>}
+
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setIsFormOpen(false);
+                setSubmitError(null);
+              }}
+              className="rounded-lg border px-4 py-2 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSubmitting ? "Saving..." : "Save Application"}
+            </button>
+          </div>
+        </form>
       )}
 
-      <div className="max-w-md">
+      <div className="rounded-lg border bg-white p-4 shadow-sm">
         <input
           type="text"
           placeholder="Search by company or role..."
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
-          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          className="w-full rounded-lg border p-3 outline-none focus:border-blue-500"
         />
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-        <table className="w-full text-left text-sm">
-          <caption className="sr-only">Your job applications</caption>
-          <thead className="bg-gray-50 text-gray-600">
+      <div className="overflow-x-auto rounded-lg border bg-white shadow-sm">
+        <table className="w-full min-w-[1000px] text-left">
+          <thead className="border-b bg-gray-50">
             <tr>
-              <th scope="col" className="px-6 py-4">
+              <th className="px-6 py-4 text-sm font-semibold text-gray-600">
                 Company
               </th>
-              <th scope="col" className="px-6 py-4">
+              <th className="px-6 py-4 text-sm font-semibold text-gray-600">
                 Role
               </th>
-              <th scope="col" className="px-6 py-4">
+              <th className="px-6 py-4 text-sm font-semibold text-gray-600">
                 Status
               </th>
-              <th scope="col" className="px-6 py-4">
+              <th className="px-6 py-4 text-sm font-semibold text-gray-600">
+                Location
+              </th>
+              <th className="px-6 py-4 text-sm font-semibold text-gray-600">
                 Date Applied
+              </th>
+              <th className="px-6 py-4 text-sm font-semibold text-gray-600">
+                Job URL
+              </th>
+              <th className="px-6 py-4 text-sm font-semibold text-gray-600">
+                Notes
               </th>
             </tr>
           </thead>
-          <tbody>
+
+          <tbody className="divide-y">
             {filteredApplications.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                  No applications found matching your search.
+                <td
+                  colSpan={7}
+                  className="px-6 py-10 text-center text-gray-500"
+                >
+                  {searchTerm
+                    ? "No applications found matching your search."
+                    : "No applications yet. Add your first application."}
                 </td>
               </tr>
             ) : (
               filteredApplications.map((application) => (
-                <tr
-                  key={application.id}
-                  className="border-t border-gray-200 hover:bg-gray-50"
-                >
+                <tr key={application.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium text-gray-900">
                     {application.company}
                   </td>
@@ -355,7 +326,11 @@ function Applications() {
                           ? "bg-green-100 text-green-700"
                           : application.status === "applied"
                             ? "bg-blue-100 text-blue-700"
-                            : "bg-red-100 text-red-700"
+                            : application.status === "offer"
+                              ? "bg-purple-100 text-purple-700"
+                              : application.status === "rejected"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-gray-100 text-gray-700"
                       }`}
                     >
                       {application.status}
@@ -363,7 +338,32 @@ function Applications() {
                   </td>
 
                   <td className="px-6 py-4 text-gray-600">
-                    {application.date_applied}
+                    {application.location || "—"}
+                  </td>
+
+                  <td className="px-6 py-4 text-gray-600">
+                    {application.date_applied
+                      ? new Date(application.date_applied).toLocaleDateString()
+                      : "—"}
+                  </td>
+
+                  <td className="px-6 py-4">
+                    {application.job_url ? (
+                      <a
+                        href={application.job_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        View Job
+                      </a>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
+
+                  <td className="max-w-xs whitespace-normal break-words px-6 py-4 text-gray-600">
+                    {application.notes || "—"}
                   </td>
                 </tr>
               ))
@@ -371,7 +371,7 @@ function Applications() {
           </tbody>
         </table>
       </div>
-    </main>
+    </div>
   );
 }
 

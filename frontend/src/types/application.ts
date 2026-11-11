@@ -30,3 +30,14 @@ export type Application = {
   updated_at: string;
 };
 
+export type ApplicationStats = {
+  total: number;
+  byStatus: {
+    saved: number;
+    applied: number;
+    interview: number;
+    offer: number;
+    rejected: number;
+    withdrawn: number;
+  };
+};
