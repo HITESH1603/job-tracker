@@ -4,6 +4,7 @@ import {
   getApplications,
   createApplication,
   updateApplication,
+  deleteApplication,
 } from "../services/applicationService";
 import type {
   Application,
@@ -146,6 +147,20 @@ function Applications() {
     setEditingApplication(application);
     setIsFormOpen(true);
     setSubmitError(null);
+  }
+
+  async function handleDelete(id: number) {
+    try {
+      await deleteApplication(id);
+
+      setApplications((currentApplications) =>
+        currentApplications.filter((application) => application.id !== id),
+      );
+    } catch (err) {
+      alert(
+        err instanceof Error ? err.message : "Failed to delete application",
+      );
+    }
   }
 
   if (isLoading) {
@@ -423,13 +438,23 @@ function Applications() {
                   </td>
 
                   <td className="px-6 py-4">
-                    <button
-                      type="button"
-                      onClick={() => handleEdit(application)}
-                      className="font-medium text-blue-600 hover:underline"
-                    >
-                      Edit
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(application)}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(application.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

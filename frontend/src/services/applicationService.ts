@@ -31,3 +31,9 @@ export async function updateApplication(
     body: JSON.stringify(input),
   });
 }
+
+export async function deleteApplication(id: number): Promise<null> {
+  return apiRequest(`/applications/${id}`, {
+    method: "DELETE",
+  });
+}

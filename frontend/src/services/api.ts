@@ -1,9 +1,6 @@
 const API_BASE_URL = "http://localhost:3000";
 
-async function apiRequest(
-  endpoint: string,
-  options: RequestInit = {}
-) {
+async function apiRequest(endpoint: string, options: RequestInit = {}) {
   const token = sessionStorage.getItem("token");
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -14,6 +11,10 @@ async function apiRequest(
       ...options.headers,
     },
   });
+
+  if (response.status === 204) {
+    return null;
+  }
 
   const data = await response.json();
 
