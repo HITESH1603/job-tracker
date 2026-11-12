@@ -10,10 +10,10 @@ export type CreateApplicationInput = {
   company: string;
   role: string;
   status: ApplicationStatus;
-  location?: string;
-  job_url?: string;
-  date_applied?: string;
-  notes?: string;
+  location?: string | null;
+  job_url?: string | null;
+  date_applied?: string | null;
+  notes?: string | null;
 };
 
 export type Application = {

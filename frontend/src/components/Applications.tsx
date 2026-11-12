@@ -3,6 +3,7 @@ import type { SyntheticEvent } from "react";
 import {
   getApplications,
   createApplication,
+  updateApplication,
 } from "../services/applicationService";
 import type {
   Application,
@@ -21,6 +22,10 @@ function isApplicationStatus(value: string): value is ApplicationStatus {
   ].includes(value);
 }
 
+function getOptionalValue(value: FormDataEntryValue | null): string | null {
+  return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
+}
+
 function Applications() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -31,6 +36,9 @@ function Applications() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const [editingApplication, setEditingApplication] =
+    useState<Application | null>(null);
 
   useEffect(() => {
     async function loadApplications() {
@@ -68,11 +76,6 @@ function Applications() {
     const role = formData.get("role");
     const status = formData.get("status");
 
-    const location = formData.get("location");
-    const jobUrl = formData.get("job_url");
-    const dateApplied = formData.get("date_applied");
-    const notes = formData.get("notes");
-
     if (
       typeof company !== "string" ||
       typeof role !== "string" ||
@@ -89,33 +92,60 @@ function Applications() {
       company,
       role,
       status,
-      ...(typeof location === "string" && location !== "" && { location }),
-      ...(typeof jobUrl === "string" && jobUrl !== "" && { job_url: jobUrl }),
-      ...(typeof dateApplied === "string" &&
-        dateApplied !== "" && { date_applied: dateApplied }),
-      ...(typeof notes === "string" && notes !== "" && { notes }),
+      location: getOptionalValue(formData.get("location")),
+      job_url: getOptionalValue(formData.get("job_url")),
+      date_applied: getOptionalValue(formData.get("date_applied")),
+      notes: getOptionalValue(formData.get("notes")),
     };
+
+    const applicationToEdit = editingApplication;
 
     try {
       setIsSubmitting(true);
       setSubmitError(null);
 
-      const newApplication = await createApplication(applicationData);
+      if (applicationToEdit) {
+        const updatedApplication = await updateApplication(
+          applicationToEdit.id,
+          applicationData,
+        );
 
-      setApplications((currentApplications) => [
-        newApplication,
-        ...currentApplications,
-      ]);
+        setApplications((currentApplications) =>
+          currentApplications.map((application) =>
+            application.id === updatedApplication.id
+              ? updatedApplication
+              : application,
+          ),
+        );
+      } else {
+        const newApplication = await createApplication(applicationData);
+
+        setApplications((currentApplications) => [
+          newApplication,
+          ...currentApplications,
+        ]);
+      }
 
       form.reset();
+      setEditingApplication(null);
       setIsFormOpen(false);
     } catch (err) {
       setSubmitError(
-        err instanceof Error ? err.message : "Failed to create application",
+        err instanceof Error
+          ? err.message
+          : applicationToEdit
+            ? "Failed to update application"
+            : "Failed to create application",
       );
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  function handleEdit(application: Application) {
+    setEditingApplication(application);
+    setIsFormOpen(true);
+    setSubmitError(null);
   }
 
   if (isLoading) {
@@ -138,7 +168,14 @@ function Applications() {
 
         <button
           onClick={() => {
-            setIsFormOpen(!isFormOpen);
+            if (isFormOpen) {
+              setIsFormOpen(false);
+              setEditingApplication(null);
+            } else {
+              setEditingApplication(null);
+              setIsFormOpen(true);
+            }
+
             setSubmitError(null);
           }}
           className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
@@ -149,10 +186,13 @@ function Applications() {
 
       {isFormOpen && (
         <form
+          key={editingApplication?.id ?? "new"}
           onSubmit={handleSubmit}
           className="space-y-4 rounded-lg border bg-white p-6 shadow-sm"
         >
-          <h2 className="text-lg font-semibold">Add New Application</h2>
+          <h2 className="text-lg font-semibold">
+            {editingApplication ? "Edit Application" : "Add New Application"}
+          </h2>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
@@ -160,6 +200,7 @@ function Applications() {
               <input
                 name="company"
                 required
+                defaultValue={editingApplication?.company ?? ""}
                 className="w-full rounded-lg border p-2"
                 placeholder="Google"
               />
@@ -170,6 +211,7 @@ function Applications() {
               <input
                 name="role"
                 required
+                defaultValue={editingApplication?.role ?? ""}
                 className="w-full rounded-lg border p-2"
                 placeholder="Software Engineer"
               />
@@ -181,7 +223,7 @@ function Applications() {
                 name="status"
                 required
                 className="w-full rounded-lg border p-2"
-                defaultValue="saved"
+                defaultValue={editingApplication?.status ?? "saved"}
               >
                 <option value="saved">Saved</option>
                 <option value="applied">Applied</option>
@@ -196,6 +238,7 @@ function Applications() {
               <label className="mb-1 block text-sm font-medium">Location</label>
               <input
                 name="location"
+                defaultValue={editingApplication?.location ?? ""}
                 className="w-full rounded-lg border p-2"
                 placeholder="Kolkata"
               />
@@ -206,6 +249,7 @@ function Applications() {
               <input
                 name="job_url"
                 type="url"
+                defaultValue={editingApplication?.job_url ?? ""}
                 className="w-full rounded-lg border p-2"
                 placeholder="https://example.com/job"
               />
@@ -218,6 +262,9 @@ function Applications() {
               <input
                 name="date_applied"
                 type="date"
+                defaultValue={
+                  editingApplication?.date_applied?.slice(0, 10) ?? ""
+                }
                 className="w-full rounded-lg border p-2"
               />
             </div>
@@ -227,6 +274,7 @@ function Applications() {
               <textarea
                 name="notes"
                 rows={3}
+                defaultValue={editingApplication?.notes ?? ""}
                 className="w-full rounded-lg border p-2"
                 placeholder="Add any notes..."
               />
@@ -240,6 +288,7 @@ function Applications() {
               type="button"
               onClick={() => {
                 setIsFormOpen(false);
+                setEditingApplication(null);
                 setSubmitError(null);
               }}
               className="rounded-lg border px-4 py-2 hover:bg-gray-50"
@@ -252,7 +301,11 @@ function Applications() {
               disabled={isSubmitting}
               className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isSubmitting ? "Saving..." : "Save Application"}
+              {isSubmitting
+                ? "Saving..."
+                : editingApplication
+                  ? "Update Application"
+                  : "Save Application"}
             </button>
           </div>
         </form>
@@ -269,7 +322,7 @@ function Applications() {
       </div>
 
       <div className="overflow-x-auto rounded-lg border bg-white shadow-sm">
-        <table className="w-full min-w-[1000px] text-left">
+        <table className="w-full min-w-[1100px] text-left">
           <thead className="border-b bg-gray-50">
             <tr>
               <th className="px-6 py-4 text-sm font-semibold text-gray-600">
@@ -293,6 +346,9 @@ function Applications() {
               <th className="px-6 py-4 text-sm font-semibold text-gray-600">
                 Notes
               </th>
+              <th className="px-6 py-4 text-sm font-semibold text-gray-600">
+                Actions
+              </th>
             </tr>
           </thead>
 
@@ -300,7 +356,7 @@ function Applications() {
             {filteredApplications.length === 0 ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={8}
                   className="px-6 py-10 text-center text-gray-500"
                 >
                   {searchTerm
@@ -364,6 +420,16 @@ function Applications() {
 
                   <td className="max-w-xs whitespace-normal break-words px-6 py-4 text-gray-600">
                     {application.notes || "—"}
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(application)}
+                      className="font-medium text-blue-600 hover:underline"
+                    >
+                      Edit
+                    </button>
                   </td>
                 </tr>
               ))

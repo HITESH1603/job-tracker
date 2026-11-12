@@ -21,3 +21,13 @@ export async function createApplication(
     body: JSON.stringify(input),
   });
 }
+
+export async function updateApplication(
+  id: number,
+  input: Partial<CreateApplicationInput>,
+): Promise<Application> {
+  return apiRequest(`/applications/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
