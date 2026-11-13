@@ -5,12 +5,35 @@ import type {
   CreateApplicationInput,
 } from "../types/application";
 
+export type ApplicationQueryParams = {
+  search?: string;
+  status?: string;
+  sortBy?: string;
+  order?: string;
+  page?: number;
+  limit?: number;
+};
+
 export async function getApplicationStats(): Promise<ApplicationStats> {
   return apiRequest("/applications/stats");
 }
 
-export async function getApplications(): Promise<Application[]> {
-  return apiRequest("/applications");
+export async function getApplications(
+  params: ApplicationQueryParams = {},
+): Promise<Application[]> {
+  const queryParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== "") {
+      queryParams.append(key, String(value));
+    }
+  });
+
+  const queryString = queryParams.toString();
+
+  return apiRequest(
+    queryString ? `/applications?${queryString}` : "/applications",
+  );
 }
 
 export async function createApplication(

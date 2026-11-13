@@ -44,7 +44,7 @@ function Applications() {
   useEffect(() => {
     async function loadApplications() {
       try {
-        const data = await getApplications();
+        const data = await getApplications({ search: searchTerm });
         setApplications(data);
       } catch (err) {
         setError(
@@ -56,16 +56,7 @@ function Applications() {
     }
 
     loadApplications();
-  }, []);
-
-  const filteredApplications = applications.filter((application) => {
-    const search = searchTerm.toLowerCase();
-
-    const companyMatches = application.company.toLowerCase().includes(search);
-    const roleMatches = application.role.toLowerCase().includes(search);
-
-    return companyMatches || roleMatches;
-  });
+  }, [searchTerm]);
 
   async function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -368,7 +359,7 @@ function Applications() {
           </thead>
 
           <tbody className="divide-y">
-            {filteredApplications.length === 0 ? (
+            {applications.length === 0 ? (
               <tr>
                 <td
                   colSpan={8}
@@ -380,7 +371,7 @@ function Applications() {
                 </td>
               </tr>
             ) : (
-              filteredApplications.map((application) => (
+              applications.map((application) => (
                 <tr key={application.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium text-gray-900">
                     {application.company}
