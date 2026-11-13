@@ -29,6 +29,7 @@ function getOptionalValue(value: FormDataEntryValue | null): string | null {
 
 function Applications() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   const [applications, setApplications] = useState<Application[]>([]);
@@ -44,7 +45,10 @@ function Applications() {
   useEffect(() => {
     async function loadApplications() {
       try {
-        const data = await getApplications({ search: searchTerm });
+        const data = await getApplications({
+          search: searchTerm,
+          status: statusFilter,
+        });
         setApplications(data);
       } catch (err) {
         setError(
@@ -56,7 +60,7 @@ function Applications() {
     }
 
     loadApplications();
-  }, [searchTerm]);
+  }, [searchTerm, statusFilter]);
 
   async function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -327,6 +331,20 @@ function Applications() {
         />
       </div>
 
+      <select
+        value={statusFilter}
+        onChange={(event) => setStatusFilter(event.target.value)}
+        className="rounded-md border border-gray-300 px-3 py-2"
+      >
+        <option value="">All statuses</option>
+        <option value="saved">Saved</option>
+        <option value="applied">Applied</option>
+        <option value="interview">Interview</option>
+        <option value="offer">Offer</option>
+        <option value="rejected">Rejected</option>
+        <option value="withdrawn">Withdrawn</option>
+      </select>
+
       <div className="overflow-x-auto rounded-lg border bg-white shadow-sm">
         <table className="w-full min-w-[1100px] text-left">
           <thead className="border-b bg-gray-50">
@@ -365,7 +383,7 @@ function Applications() {
                   colSpan={8}
                   className="px-6 py-10 text-center text-gray-500"
                 >
-                  {searchTerm
+                  {searchTerm || statusFilter
                     ? "No applications found matching your search."
                     : "No applications yet. Add your first application."}
                 </td>
