@@ -30,6 +30,8 @@ function getOptionalValue(value: FormDataEntryValue | null): string | null {
 function Applications() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [sortBy, setSortBy] = useState("created_at");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   const [applications, setApplications] = useState<Application[]>([]);
@@ -48,6 +50,8 @@ function Applications() {
         const data = await getApplications({
           search: searchTerm,
           status: statusFilter,
+          sortBy: sortBy,
+          order: sortOrder,
         });
         setApplications(data);
       } catch (err) {
@@ -60,7 +64,7 @@ function Applications() {
     }
 
     loadApplications();
-  }, [searchTerm, statusFilter]);
+  }, [searchTerm, statusFilter, sortBy, sortOrder]);
 
   async function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -343,6 +347,23 @@ function Applications() {
         <option value="offer">Offer</option>
         <option value="rejected">Rejected</option>
         <option value="withdrawn">Withdrawn</option>
+      </select>
+
+      <select
+        value={`${sortBy}:${sortOrder}`}
+        onChange={(event) => {
+          const [newSortBy, newSortOrder] = event.target.value.split(":");
+
+          if (newSortBy && newSortOrder) {
+            setSortBy(newSortBy);
+            setSortOrder(newSortOrder);
+          }
+        }}
+        className="rounded-md border border-gray-300 px-3 py-2"
+      >
+        <option value="created_at:desc">Newest first</option>
+        <option value="created_at:asc">Oldest first</option>
+        <option value="company:asc">Company (A-Z)</option>
       </select>
 
       <div className="overflow-x-auto rounded-lg border bg-white shadow-sm">
