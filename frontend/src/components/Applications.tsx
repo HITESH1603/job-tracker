@@ -13,19 +13,21 @@ import type {
 } from "../types/application";
 
 function isApplicationStatus(value: string): value is ApplicationStatus {
-  return [
-    "saved",
-    "applied",
-    "interview",
-    "offer",
-    "rejected",
-    "withdrawn",
-  ].includes(value);
+  return APPLICATION_STATUSES.includes(value as ApplicationStatus);
 }
 
 function getOptionalValue(value: FormDataEntryValue | null): string | null {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
 }
+
+const APPLICATION_STATUSES = [
+  "saved",
+  "applied",
+  "interview",
+  "offer",
+  "rejected",
+  "withdrawn",
+] as const;
 
 function Applications() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,6 +36,9 @@ function Applications() {
   const [sortOrder, setSortOrder] = useState("desc");
   const [isFormOpen, setIsFormOpen] = useState(false);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,26 +50,39 @@ function Applications() {
     useState<Application | null>(null);
 
   useEffect(() => {
+    let ignore = false;
     async function loadApplications() {
       try {
+        setError(null);
         const data = await getApplications({
           search: searchTerm,
           status: statusFilter,
           sortBy: sortBy,
           order: sortOrder,
+          page: currentPage,
+          limit: 10,
         });
-        setApplications(data);
+        if (ignore) return;
+        setApplications(data.applications);
+        setTotalPages(data.totalPages);
       } catch (err) {
+        if (ignore) return;
         setError(
           err instanceof Error ? err.message : "Failed to load applications",
         );
       } finally {
-        setIsLoading(false);
+        if (!ignore) {
+          setIsLoading(false);
+        }
       }
     }
 
     loadApplications();
-  }, [searchTerm, statusFilter, sortBy, sortOrder]);
+
+    return () => {
+      ignore = true;
+    };
+  }, [searchTerm, statusFilter, sortBy, sortOrder, currentPage, refreshKey]);
 
   async function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -84,13 +102,22 @@ function Applications() {
       return;
     }
 
+    const trimmedCompany = company.trim();
+    const trimmedRole = role.trim();
+
+    setSubmitError(null);
+
+    if (!trimmedCompany || !trimmedRole) {
+      setSubmitError("Company and role cannot be empty.");
+      return;
+    }
     if (!isApplicationStatus(status)) {
       return;
     }
 
     const applicationData: CreateApplicationInput = {
-      company,
-      role,
+      company: trimmedCompany,
+      role: trimmedRole,
       status,
       location: getOptionalValue(formData.get("location")),
       job_url: getOptionalValue(formData.get("job_url")),
@@ -105,25 +132,12 @@ function Applications() {
       setSubmitError(null);
 
       if (applicationToEdit) {
-        const updatedApplication = await updateApplication(
-          applicationToEdit.id,
-          applicationData,
-        );
+        await updateApplication(applicationToEdit.id, applicationData);
 
-        setApplications((currentApplications) =>
-          currentApplications.map((application) =>
-            application.id === updatedApplication.id
-              ? updatedApplication
-              : application,
-          ),
-        );
+        setRefreshKey((k) => k + 1);
       } else {
-        const newApplication = await createApplication(applicationData);
-
-        setApplications((currentApplications) => [
-          newApplication,
-          ...currentApplications,
-        ]);
+        await createApplication(applicationData);
+        setRefreshKey((k) => k + 1);
       }
 
       form.reset();
@@ -149,12 +163,15 @@ function Applications() {
   }
 
   async function handleDelete(id: number) {
+    if (!window.confirm("Delete this application?")) return;
     try {
       await deleteApplication(id);
 
-      setApplications((currentApplications) =>
-        currentApplications.filter((application) => application.id !== id),
-      );
+      if (applications.length === 1 && currentPage > 1) {
+        setCurrentPage((prev) => prev - 1);
+      } else {
+        setRefreshKey((k) => k + 1);
+      }
     } catch (err) {
       alert(
         err instanceof Error ? err.message : "Failed to delete application",
@@ -164,10 +181,6 @@ function Applications() {
 
   if (isLoading) {
     return <p className="p-6">Loading applications...</p>;
-  }
-
-  if (error) {
-    return <p className="p-6 text-red-600">{error}</p>;
   }
 
   return (
@@ -198,6 +211,10 @@ function Applications() {
         </button>
       </div>
 
+      {error && (
+        <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</p>
+      )}
+
       {isFormOpen && (
         <form
           key={editingApplication?.id ?? "new"}
@@ -210,8 +227,15 @@ function Applications() {
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium">Company</label>
+              <label
+                htmlFor="company"
+                className="mb-1 block text-sm font-medium"
+              >
+                Company
+              </label>
+
               <input
+                id="company"
                 name="company"
                 required
                 defaultValue={editingApplication?.company ?? ""}
@@ -221,8 +245,11 @@ function Applications() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium">Role</label>
+              <label htmlFor="role" className="mb-1 block text-sm font-medium">
+                Role
+              </label>
               <input
+                id="role"
                 name="role"
                 required
                 defaultValue={editingApplication?.role ?? ""}
@@ -232,25 +259,36 @@ function Applications() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium">Status</label>
+              <label
+                htmlFor="status"
+                className="mb-1 block text-sm font-medium"
+              >
+                Status
+              </label>
               <select
+                id="status"
                 name="status"
                 required
                 className="w-full rounded-lg border p-2"
                 defaultValue={editingApplication?.status ?? "saved"}
               >
-                <option value="saved">Saved</option>
-                <option value="applied">Applied</option>
-                <option value="interview">Interview</option>
-                <option value="offer">Offer</option>
-                <option value="rejected">Rejected</option>
-                <option value="withdrawn">Withdrawn</option>
+                {APPLICATION_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </option>
+                ))}
               </select>
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium">Location</label>
+              <label
+                htmlFor="location"
+                className="mb-1 block text-sm font-medium"
+              >
+                Location
+              </label>
               <input
+                id="location"
                 name="location"
                 defaultValue={editingApplication?.location ?? ""}
                 className="w-full rounded-lg border p-2"
@@ -259,8 +297,14 @@ function Applications() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium">Job URL</label>
+              <label
+                htmlFor="job_url"
+                className="mb-1 block text-sm font-medium"
+              >
+                Job URL
+              </label>
               <input
+                id="job_url"
                 name="job_url"
                 type="url"
                 defaultValue={editingApplication?.job_url ?? ""}
@@ -270,10 +314,14 @@ function Applications() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium">
+              <label
+                htmlFor="date_applied"
+                className="mb-1 block text-sm font-medium"
+              >
                 Date Applied
               </label>
               <input
+                id="date_applied"
                 name="date_applied"
                 type="date"
                 defaultValue={
@@ -284,8 +332,11 @@ function Applications() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-1 block text-sm font-medium">Notes</label>
+              <label htmlFor="notes" className="mb-1 block text-sm font-medium">
+                Notes
+              </label>
               <textarea
+                id="notes"
                 name="notes"
                 rows={3}
                 defaultValue={editingApplication?.notes ?? ""}
@@ -325,46 +376,53 @@ function Applications() {
         </form>
       )}
 
-      <div className="rounded-lg border bg-white p-4 shadow-sm">
+      <div className="flex flex-col gap-3 rounded-lg border bg-white p-4 shadow-sm md:flex-row">
         <input
           type="text"
           placeholder="Search by company or role..."
           value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          className="w-full rounded-lg border p-3 outline-none focus:border-blue-500"
+          onChange={(event) => {
+            setSearchTerm(event.target.value);
+            setCurrentPage(1);
+          }}
+          className="w-full rounded-lg border p-3 outline-none focus:border-blue-500 md:flex-1"
         />
+
+        <select
+          value={statusFilter}
+          onChange={(event) => {
+            setStatusFilter(event.target.value);
+            setCurrentPage(1);
+          }}
+          className="rounded-md border border-gray-300 px-3 py-2"
+        >
+          <option value="">All statuses</option>
+
+          {APPLICATION_STATUSES.map((status) => (
+            <option key={status} value={status}>
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={`${sortBy}:${sortOrder}`}
+          onChange={(event) => {
+            const [newSortBy, newSortOrder] = event.target.value.split(":");
+
+            if (newSortBy && newSortOrder) {
+              setSortBy(newSortBy);
+              setSortOrder(newSortOrder);
+              setCurrentPage(1);
+            }
+          }}
+          className="rounded-md border border-gray-300 px-3 py-2"
+        >
+          <option value="created_at:desc">Newest first</option>
+          <option value="created_at:asc">Oldest first</option>
+          <option value="company:asc">Company (A-Z)</option>
+        </select>
       </div>
-
-      <select
-        value={statusFilter}
-        onChange={(event) => setStatusFilter(event.target.value)}
-        className="rounded-md border border-gray-300 px-3 py-2"
-      >
-        <option value="">All statuses</option>
-        <option value="saved">Saved</option>
-        <option value="applied">Applied</option>
-        <option value="interview">Interview</option>
-        <option value="offer">Offer</option>
-        <option value="rejected">Rejected</option>
-        <option value="withdrawn">Withdrawn</option>
-      </select>
-
-      <select
-        value={`${sortBy}:${sortOrder}`}
-        onChange={(event) => {
-          const [newSortBy, newSortOrder] = event.target.value.split(":");
-
-          if (newSortBy && newSortOrder) {
-            setSortBy(newSortBy);
-            setSortOrder(newSortOrder);
-          }
-        }}
-        className="rounded-md border border-gray-300 px-3 py-2"
-      >
-        <option value="created_at:desc">Newest first</option>
-        <option value="created_at:asc">Oldest first</option>
-        <option value="company:asc">Company (A-Z)</option>
-      </select>
 
       <div className="overflow-x-auto rounded-lg border bg-white shadow-sm">
         <table className="w-full min-w-[1100px] text-left">
@@ -404,9 +462,11 @@ function Applications() {
                   colSpan={8}
                   className="px-6 py-10 text-center text-gray-500"
                 >
-                  {searchTerm || statusFilter
-                    ? "No applications found matching your search."
-                    : "No applications yet. Add your first application."}
+                  {error
+                    ? "Could not load applications."
+                    : searchTerm || statusFilter
+                      ? "No applications found matching your search."
+                      : "No applications yet. Add your first application."}
                 </td>
               </tr>
             ) : (
@@ -444,7 +504,12 @@ function Applications() {
 
                   <td className="px-6 py-4 text-gray-600">
                     {application.date_applied
-                      ? new Date(application.date_applied).toLocaleDateString()
+                      ? new Date(application.date_applied).toLocaleDateString(
+                          "en-IN",
+                          {
+                            timeZone: "UTC",
+                          },
+                        )
                       : "—"}
                   </td>
 
@@ -492,6 +557,29 @@ function Applications() {
           </tbody>
         </table>
       </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={() => setCurrentPage((prev) => prev - 1)}
+            disabled={currentPage === 1}
+            className="rounded-md border px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Previous
+          </button>
+
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+
+          <button
+            onClick={() => setCurrentPage((prev) => prev + 1)}
+            disabled={currentPage === totalPages}
+            className="rounded-md border px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

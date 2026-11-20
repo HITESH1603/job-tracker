@@ -23,7 +23,7 @@ function Dashboard() {
         ]);
 
         setStats(statsData);
-        setRecentApplications(applicationsData.slice(0, 3));
+        setRecentApplications(applicationsData.applications.slice(0, 3));
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to load dashboard",

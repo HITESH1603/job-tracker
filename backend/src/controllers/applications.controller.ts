@@ -1,144 +1,154 @@
-import { Request,Response } from "express";
-import { getApplicationsService, getApplicationByIDService, createApplicationService, updateApplicationService, deleteApplicationService, getApplicationStatsService} from "../services/application.service";
+import { Request, Response } from "express";
+import {
+  getApplicationsService,
+  getApplicationByIDService,
+  createApplicationService,
+  updateApplicationService,
+  deleteApplicationService,
+  getApplicationStatsService,
+} from "../services/application.service";
 
+export async function getApplications(req: Request, res: Response) {
+  if (req.userId === undefined) {
+    return res.status(401).json({
+      message: "Unauthorized",
+    });
+  }
 
-export async function  getApplications (req:Request,res:Response) {
-     
-    if(req.userId === undefined){
-        return res.status(401).json({
-            message:"Unauthorized"
-        });
-    }
+  const { status, search, sortBy, order, page, limit } = req.validatedQuery;
 
+  const result = await getApplicationsService(
+    req.userId,
+    status,
+    search,
+    sortBy,
+    order,
+    page,
+    limit,
+  );
 
-   const {status, search, sortBy, order, page, limit} = req.validatedQuery;
-
-   const result = await getApplicationsService(req.userId,status, search, sortBy, order, page, limit);
-
-       
-         res.json(result);
+  res.json(result);
 }
 
+export async function getApplicationByID(req: Request, res: Response) {
+  const { id } = req.params;
 
-export async function getApplicationByID (req:Request,res:Response){
+  const applicationID = Number(id);
 
-    const {id} = req.params;
+  if (!Number.isInteger(applicationID) || applicationID <= 0) {
+    return res.status(400).json({
+      message: "Invalid ID",
+    });
+  }
 
-    const applicationID = Number(id);
+  if (req.userId === undefined) {
+    return res.status(401).json({
+      message: "Unauthorized",
+    });
+  }
+  const application = await getApplicationByIDService(
+    applicationID,
+    req.userId,
+  );
 
-    if(!Number.isInteger(applicationID)|| applicationID <= 0){
+  if (!application) {
+    return res.status(404).json({
+      message: "Application not found",
+    });
+  }
 
-        return res.status(400).json({
-          message : "Invalid ID"
-        });
-    }
-       
-    if(req.userId === undefined){
-      return  res.status(401).json({
-            message:"Unauthorized"
-        });
-    }
-    const  application = await getApplicationByIDService(applicationID,req.userId);
-
-     if(!application){
-        return res.status(404).json({
-            message : "Application not found"
-        });
-     }
-
-     
-    res.json(application);
+  res.json(application);
 }
 
+export async function createApplication(req: Request, res: Response) {
+  if (req.userId === undefined) {
+    return res.status(401).json({
+      message: "Unauthorized",
+    });
+  }
 
+  const { company, role, status, location, job_url, date_applied, notes } =
+    req.body;
 
+  const application = await createApplicationService(
+    req.userId,
+    company,
+    role,
+    status,
+    location,
+    job_url,
+    date_applied,
+    notes,
+  );
 
-
-export async function createApplication (req:Request ,res:Response) {
-            
-    if(req.userId === undefined){
-        return res.status(401).json({
-            message: "Unauthorized"
-        });
-    }
-
-    const {company ,role ,status ,location ,job_url ,date_applied ,notes} = req.body;
-
-    const application = await createApplicationService(req.userId ,company ,role ,status ,location, job_url ,date_applied,notes);
-
-    res.status(201).json(application);
+  res.status(201).json(application);
 }
 
+export async function updateApplication(req: Request, res: Response) {
+  const { id } = req.params;
+  const applicationId = Number(id);
 
-export async function updateApplication(req:Request, res:Response){
-     
-     const {id} = req.params;
-     const applicationId = Number(id);
+  if (!Number.isInteger(applicationId) || applicationId <= 0) {
+    return res.status(400).json({
+      message: "Invalid ID",
+    });
+  }
 
-     if(!Number.isInteger(applicationId) || applicationId <= 0){
-        return res.status(400).json({
-            message: "Invalid ID"
-        });
-     }
+  if (req.userId === undefined) {
+    return res.status(401).json({
+      message: "Unauthorized",
+    });
+  }
 
-      if(req.userId === undefined){
-        return res.status(401).json({
-            message: "Unauthorized"
-        });
-      }
+  const application = await updateApplicationService(
+    applicationId,
+    req.userId,
+    req.body,
+  );
 
-      const application = await updateApplicationService(applicationId, req.userId, req.body);
+  if (!application) {
+    return res.status(404).json({
+      message: "Application not found",
+    });
+  }
 
-      if(!application){
-        return res.status(404).json({
-            message: "Application not found"
-        });
-      }
-
-
-      res.json(application);
+  res.json(application);
 }
 
+export async function deleteApplication(req: Request, res: Response) {
+  const { id } = req.params;
 
-export async function deleteApplication(req:Request, res:Response){
+  const applicationId = Number(id);
 
-      const {id} = req.params;
+  if (!Number.isInteger(applicationId) || applicationId <= 0) {
+    return res.status(400).json({
+      message: "Invalid ID",
+    });
+  }
 
-      const applicationId = Number(id);
+  if (req.userId === undefined) {
+    return res.status(401).json({
+      message: "Unauthorized",
+    });
+  }
 
-      if(!Number.isInteger(applicationId) || applicationId<=0){
+  const application = await deleteApplicationService(applicationId, req.userId);
 
-        return res.status(400).json({
-          message: "Invalid ID"
-        });
-      }
+  if (!application) {
+    return res.status(404).json({
+      message: "Application not found",
+    });
+  }
 
-      if(req.userId === undefined){
+  return res.status(204).send();
+}
 
-        return res.status(401).json({
-            message: "Unauthorized"
-        });
-      }
-
-      const application = await deleteApplicationService(applicationId, req.userId);
-
-      if(!application){
-
-        return res.status(404).json({
-            message: "Application not found"
-        });
-      }
-
-        return res.status(204).send();
-      }
-
-
-      export async function getApplicationStats (req:Request, res:Response){
-        if (req.userId === undefined){
-            return res.status(401).json({
-                message: "Unauthorized"
-            });
-        }
-         const result = await getApplicationStatsService(req.userId);
-         return res.json(result);
-      }
+export async function getApplicationStats(req: Request, res: Response) {
+  if (req.userId === undefined) {
+    return res.status(401).json({
+      message: "Unauthorized",
+    });
+  }
+  const result = await getApplicationStatsService(req.userId);
+  return res.json(result);
+}

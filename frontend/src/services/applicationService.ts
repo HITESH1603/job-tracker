@@ -14,13 +14,21 @@ export type ApplicationQueryParams = {
   limit?: number;
 };
 
+export type PaginatedApplications = {
+  applications: Application[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
 export async function getApplicationStats(): Promise<ApplicationStats> {
   return apiRequest("/applications/stats");
 }
 
 export async function getApplications(
   params: ApplicationQueryParams = {},
-): Promise<Application[]> {
+): Promise<PaginatedApplications> {
   const queryParams = new URLSearchParams();
 
   Object.entries(params).forEach(([key, value]) => {
