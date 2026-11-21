@@ -416,7 +416,7 @@ function Applications() {
               setCurrentPage(1);
             }
           }}
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="rounded-lg border border-gray-300 px-3 py-2"
         >
           <option value="created_at:desc">Newest first</option>
           <option value="created_at:asc">Oldest first</option>
@@ -482,13 +482,13 @@ function Applications() {
 
                   <td className="px-6 py-4">
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-medium ${
+                      className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${
                         application.status === "interview"
-                          ? "bg-green-100 text-green-700"
+                          ? "bg-purple-100 text-purple-700"
                           : application.status === "applied"
                             ? "bg-blue-100 text-blue-700"
                             : application.status === "offer"
-                              ? "bg-purple-100 text-purple-700"
+                              ? "bg-green-100 text-green-700"
                               : application.status === "rejected"
                                 ? "bg-red-100 text-red-700"
                                 : "bg-gray-100 text-gray-700"

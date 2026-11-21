@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./components/Dashboard";
 import Applications from "./components/Applications";
@@ -6,6 +7,7 @@ import GuestRoute from "./components/GuestRoute";
 import AuthenticatedLayout from "./components/AuthenticatedLayout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -33,6 +35,17 @@ function App() {
       />
 
       <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <AuthenticatedLayout>
+              <Profile />
+            </AuthenticatedLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/login"
         element={
           <GuestRoute>
@@ -40,6 +53,7 @@ function App() {
           </GuestRoute>
         }
       />
+
       <Route
         path="/register"
         element={

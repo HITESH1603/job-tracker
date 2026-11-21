@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { loginUser, getCurrentUser } from "../services/authService";
@@ -23,7 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
-      } catch  {
+      } catch {
         sessionStorage.removeItem("token");
         setUser(null);
       } finally {

@@ -1,3 +1,4 @@
+
 const API_BASE_URL = "http://localhost:3000";
 
 async function apiRequest(endpoint: string, options: RequestInit = {}) {
@@ -19,6 +20,16 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
   const data = await response.json();
 
   if (!response.ok) {
+    const validationErrors = data.errors;
+
+    if (validationErrors && typeof validationErrors === "object") {
+      const messages = Object.values(validationErrors).flat();
+
+      if (messages.length > 0) {
+        throw new Error(messages.join(". "));
+      }
+    }
+
     throw new Error(data.message || "Something went wrong");
   }
 
