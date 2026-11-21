@@ -1,11 +1,11 @@
 import type { ApplicationQuery } from "../validation/applicationQuery.schema";
-export {}
+export {};
 
 declare global {
-    namespace Express{
-        interface Request {
-            userId ?: number;
-            validatedQuery: ApplicationQuery;
-        }
+  namespace Express {
+    interface Request {
+      userId?: number;
+      validatedQuery: ApplicationQuery;
     }
+  }
 }
