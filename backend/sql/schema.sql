@@ -31,3 +31,6 @@ CREATE TABLE applications (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX idx_applications_user_created
+ON applications (user_id, created_at DESC);

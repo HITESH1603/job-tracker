@@ -1,3 +1,4 @@
+
 import rateLimit from "express-rate-limit";
 
 export const loginRateLimiter = rateLimit({
@@ -8,4 +9,5 @@ export const loginRateLimiter = rateLimit({
   },
   standardHeaders: "draft-8",
   legacyHeaders: false,
+  skipSuccessfulRequests: true,
 });
