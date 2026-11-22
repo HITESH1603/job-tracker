@@ -1,4 +1,3 @@
-
 import { Pool, types } from "pg";
 import dotenv from "dotenv";
 
@@ -18,5 +17,9 @@ const pool = process.env.DATABASE_URL
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
     });
+
+pool.on("error", (err) => {
+  console.error("Unexpected idle DB client error", err);
+});
 
 export default pool;
