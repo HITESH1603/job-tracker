@@ -45,7 +45,5 @@ export async function loginUser(input: LoginInput): Promise<LoginResponse> {
 }
 
 export async function getCurrentUser(): Promise<User> {
-  const data = await apiRequest("/auth/me");
-
-  return data.user;
+  return apiRequest("/auth/me");
 }
