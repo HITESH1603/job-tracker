@@ -40,11 +40,23 @@ A full-stack web app for tracking job applications from "saved" to "offer". Buil
 
 ## Architecture
 
-```
-React + Vite (Vercel)  ->  Express API (Vercel serverless)  ->  PostgreSQL (Neon)
-```
+React + Vite (Vercel)
+|
+| HTTP requests
+v
+Express API (Vercel Serverless Functions)
+|
+| SQL queries
+v
+PostgreSQL (Neon)
 
-The backend follows a routes -> controllers -> services layout. Request bodies and query parameters are validated with Zod before they reach the database layer.
+The backend follows a layered architecture:
+
+Routes -> Controllers -> Services -> Database
+
+Routes handle endpoint definitions and middleware, controllers handle HTTP requests and responses, and services contain the application logic and database operations.
+
+Zod validates incoming request bodies and query parameters before processing.
 
 ## API overview
 
@@ -114,7 +126,6 @@ npm run dev            # http://localhost:5173
 - The login rate limiter uses in-memory storage, which is per-instance on serverless. A shared store such as Redis would be the production choice.
 - The JWT is kept in session storage. An httpOnly cookie would reduce XSS exposure.
 - Planned: automated tests with CI, and an AI-assisted job-description parser that pre-fills the application form.
-
 
 Author: Hitesh Mahato
 
