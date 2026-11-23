@@ -21,6 +21,7 @@ export async function getApplicationsService(
   };
 
   const sortColumn = sortColumns[sortBy] ?? "created_at";
+  const sortExpression = sortBy === "company" ? "LOWER(company)" : sortColumn;
   const sortOrder = order === "asc" ? "ASC" : "DESC";
 
   const conditions: string[] = ["user_id= $1"];
@@ -58,7 +59,7 @@ export async function getApplicationsService(
           job_url, date_applied, notes, created_at, updated_at
           FROM applications
           WHERE ${conditions.join(" AND ")}
-          ORDER BY ${sortColumn} ${sortOrder}
+         ORDER BY ${sortExpression} ${sortOrder}, id ASC
           LIMIT $${limitPlaceholder}
           OFFSET $${offsetPlaceholder} `,
     values,
