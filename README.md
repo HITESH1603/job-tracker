@@ -71,7 +71,7 @@ All `/applications` routes require an `Authorization: Bearer <token>` header.
 
 ## Running locally
 
-Requirements: Node.js 20+ and PostgreSQL.
+Requirements: Node.js 20.19+ or 22.12+, and PostgreSQL.
 
 ```bash
 git clone https://github.com/HITESH1603/job-tracker.git
